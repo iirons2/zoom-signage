@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="origin">
     <title>Clean Live Stream Digital Signage</title>
     <style>
         /* Essential styles to force the video player to fill the entire screen */
@@ -12,7 +11,7 @@
             padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden;
+            overflow: hidden; /* Prevents scrollbars */
             background-color: black;
             font-family: sans-serif;
         }
@@ -25,13 +24,13 @@
 </head>
 <body>
     <!-- 
-    Updated to include Closed Captions (cc_load_policy=1) and hide Annotations (iv_load_policy=3).
+    The embedded YouTube player using the "embed" URL path.
+    Updated to include cc_lang_pref=en to explicitly request English captions.
     -->
     <iframe 
-        src="https://www.youtube.com/embed/iEpJwprxDdk?autoplay=1&mute=1&controls=0&modestbranding=1&cc_load_policy=1&iv_load_policy=3"
+        src="https://www.youtube.com/embed/iEpJwprxDdk?autoplay=1&mute=1&controls=0&modestbranding=1&cc_load_policy=1&iv_load_policy=3&cc_lang_pref=en"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture" 
-        allowfullscreen
-        referrerpolicy="strict-origin-when-cross-origin"> 
+        allowfullscreen>
     </iframe>
 </body>
 </html>
