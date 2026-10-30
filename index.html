@@ -26,14 +26,15 @@
 </head>
 <body>
     <!--
-    Embedded YouTube player using the "embed" URL path.
+    Embedded YouTube player using the privacy-enhanced youtube-nocookie.com domain.
+    Testing whether this embed host is accepted by the Zoom Rooms / Logitech Roommate
+    signage webview, which gets "This content isn't available" on youtube.com embeds.
     cc_lang_pref=en requests English captions.
-    referrerpolicy is set explicitly so the Referer header is sent even from
-    restrictive webviews (e.g. Zoom Rooms signage renderer).
-    modestbranding removed - deprecated by YouTube, no effect.
+    referrerpolicy is set explicitly so the Referer header is sent (fixes Error 153).
+    To revert: change www.youtube-nocookie.com back to www.youtube.com.
     -->
     <iframe
-        src="https://www.youtube.com/embed/QB5BNdBFujE?autoplay=1&mute=1&controls=0&cc_load_policy=1&iv_load_policy=3&cc_lang_pref=en"
+        src="https://www.youtube-nocookie.com/embed/QB5BNdBFujE?autoplay=1&mute=1&controls=0&cc_load_policy=1&iv_load_policy=3&cc_lang_pref=en"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         referrerpolicy="strict-origin-when-cross-origin"
         allowfullscreen>
