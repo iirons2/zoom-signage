@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Signage Diagnostic</title>
+    <style>
+        /* Large high-contrast text so it can be read from a photo of the TV */
+        body {
+            margin: 40px;
+            background: black;
+            color: white;
+            font-family: monospace;
+            font-size: 28px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        .label { color: #7fd4ff; }
+        .bad { color: #ff6b6b; }
+        .good { color: #6bff8a; }
+    </style>
+</head>
+<body>
+    <!--
+    Quick throwaway diagnostic page. Shows how the Zoom Rooms / Roommate signage
+    renderer is loading this page, to explain YouTube Error 153 (missing referrer).
+    Remove from the repo when done.
+    -->
+    <div id="out">Loading...</div>
+    <script>
+        try {
+            // Gather what the renderer reports about itself and this page
+            var origin = window.location.origin;
+            var info = [
+                ["Page URL", window.location.href],
+                ["Origin", origin],
+                ["Protocol", window.location.protocol],
+                ["document.referrer", document.referrer || "(empty)"],
+                ["User agent", navigator.userAgent],
+                ["Cookies enabled", String(navigator.cookieEnabled)]
+            ];
+
+            // Flag the key result: YouTube needs a real https origin to receive a referrer
+            var originOk = window.location.protocol === "https:" && origin && origin !== "null";
+            var verdict = originOk
+                ? '<div class="good">Origin looks valid (https). If YouTube still shows 153, the webview is stripping referrers.</div>'
+                : '<div class="bad">Origin is not a normal https origin. Page is likely cached/rendered locally, so no referrer can be sent.</div>';
+
+            var html = "";
+            for (var i = 0; i < info.length; i++) {
+                html += '<div><span class="label">' + info[i][0] + ':</span> ' + info[i][1] + '</div>';
+            }
+            document.getElementById("out").innerHTML = html + "<br>" + verdict;
+        } catch (e) {
+            // Show any error on screen since there is no console access on the device
+            document.getElementById("out").innerText = "Diagnostic error: " + e.message;
+        }
+    </script>
+</body>
+</html>
