@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Clean Live Stream Digital Signage - IFrame API Test</title>
+    <style>
+        /* Force the player to fill the entire screen */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: black;
+            font-family: sans-serif;
+        }
+        #player, iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* On-screen error readout, since there is no console on the Roommate */
+        #status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #ff6b6b;
+            font-size: 24px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <!--
+    TEST VERSION using the YouTube IFrame Player API instead of a static iframe.
+    The API passes origin and widget_referrer as URL parameters, which may identify
+    the embedding site even when the Roommate webview strips the Referer header.
+    Unconfirmed whether YouTube accepts this in place of the header. Test only.
+    -->
+    <div id="player"></div>
+    <div id="status"></div>
+
+    <!-- YouTube IFrame Player API loader -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        var VIDEO_ID = "QB5BNdBFujE"; // Update if Bloomberg restarts the stream
+        var player;
+
+        // Called automatically by the IFrame API once it has loaded
+        function onYouTubeIframeAPIReady() {
+            try {
+                player = new YT.Player("player", {
+                    host: "https://www.youtube-nocookie.com",
+                    videoId: VIDEO_ID,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 0,
+                        cc_load_policy: 1,
+                        cc_lang_pref: "en",
+                        iv_load_policy: 3,
+                        playsinline: 1,
+                        origin: window.location.origin,
+                        widget_referrer: window.location.href
+                    },
+                    events: {
+                        onReady: function (e) {
+                            // Mute and play explicitly in case autoplay params are ignored
+                            e.target.mute();
+                            e.target.playVideo();
+                        },
+                        onError: function (e) {
+                            // Show the YouTube error code on screen for diagnosis
+                            document.getElementById("status").innerText =
+                                "YouTube player error code: " + e.data;
+                        }
+                    }
+                });
+            } catch (err) {
+                document.getElementById("status").innerText = "Player setup failed: " + err.message;
+            }
+        }
+
+        // If the API script itself never loads, report it after 15 seconds
+        setTimeout(function () {
+            if (typeof YT === "undefined" || !YT.Player) {
+                document.getElementById("status").innerText = "YouTube IFrame API did not load";
+            }
+        }, 15000);
+    </script>
+</body>
+</html>
