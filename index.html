@@ -3,41 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Explicit referrer policy: YouTube rejects embeds with no Referer header (Error 153) -->
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Clean Live Stream Digital Signage</title>
     <style>
-        /* Essential styles to force the video player to fill the entire screen */
+        /* Force the player to fill the entire screen */
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden; /* Prevents scrollbars */
+            overflow: hidden;
             background-color: black;
             font-family: sans-serif;
         }
-        iframe {
+        #player, iframe {
             width: 100%;
             height: 100%;
             border: none;
+        }
+        /* On-screen error readout, since there is no console on the Roommate */
+        #status {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #ff6b6b;
+            font-size: 24px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
     <!--
-    Embedded YouTube player using the privacy-enhanced youtube-nocookie.com domain.
-    Testing whether this embed host is accepted by the Zoom Rooms / Logitech Roommate
-    signage webview, which gets "This content isn't available" on youtube.com embeds.
-    cc_lang_pref=en requests English captions.
-    referrerpolicy is set explicitly so the Referer header is sent (fixes Error 153).
-    To revert: change www.youtube-nocookie.com back to www.youtube.com.
+    Bloomberg live stream for Zoom Rooms digital signage on Logitech Roommates.
+
+    Uses the YouTube IFrame Player API instead of a static iframe. The Roommate
+    signage webview strips the HTTP Referer header, which caused YouTube Error 153.
+    The API passes origin and widget_referrer as URL parameters, which YouTube
+    accepts as the embedding site's identity.
+
+    If the stream breaks:
+    - Check whether Bloomberg restarted the stream and the video ID changed (VIDEO_ID below).
+    - Any YouTube error code appears in red text at the bottom left of the screen.
     -->
-    <iframe
-        src="https://www.youtube-nocookie.com/embed/QB5BNdBFujE?autoplay=1&mute=1&controls=0&cc_load_policy=1&iv_load_policy=3&cc_lang_pref=en"
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        referrerpolicy="strict-origin-when-cross-origin"
-        allowfullscreen>
-    </iframe>
+    <div id="player"></div>
+    <div id="status"></div>
+
+    <!-- YouTube IFrame Player API loader -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        var VIDEO_ID = "QB5BNdBFujE"; // Update if Bloomberg restarts the stream
+        var player;
+
+        // Called automatically by the IFrame API once it has loaded
+        function onYouTubeIframeAPIReady() {
+            try {
+                player = new YT.Player("player", {
+                    host: "https://www.youtube-nocookie.com",
+                    videoId: VIDEO_ID,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 0,
+                        cc_load_policy: 1,
+                        cc_lang_pref: "en",
+                        iv_load_policy: 3,
+                        playsinline: 1,
+                        origin: window.location.origin,
+                        widget_referrer: window.location.href
+                    },
+                    events: {
+                        onReady: function (e) {
+                            // Mute and play explicitly in case autoplay params are ignored
+                            e.target.mute();
+                            e.target.playVideo();
+                        },
+                        onError: function (e) {
+                            // Show the YouTube error code on screen for diagnosis
+                            document.getElementById("status").innerText =
+                                "YouTube player error code: " + e.data;
+                        }
+                    }
+                });
+            } catch (err) {
+                document.getElementById("status").innerText = "Player setup failed: " + err.message;
+            }
+        }
+
+        // If the API script itself never loads, report it after 15 seconds
+        setTimeout(function () {
+            if (typeof YT === "undefined" || !YT.Player) {
+                document.getElementById("status").innerText = "YouTube IFrame API did not load";
+            }
+        }, 15000);
+    </script>
 </body>
 </html>
