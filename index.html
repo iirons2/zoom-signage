@@ -20,15 +20,26 @@
             width: 100%;
             height: 100%;
             border: none;
-            /* Block hover/pointer events so the webview never shows the iframe title tooltip.
-               Signage is non-interactive, so nothing is lost. */
             pointer-events: none;
+        }
+        /* Transparent full-screen layer above the player. Absorbs any hover from the
+           webview's virtual pointer so it never reaches the iframe or its title. */
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            background: transparent;
+            cursor: none;
         }
         /* On-screen error readout, since there is no console on the Roommate */
         #status {
             position: absolute;
             bottom: 10px;
             left: 10px;
+            z-index: 20;
             color: #ff6b6b;
             font-size: 24px;
             font-family: monospace;
@@ -44,14 +55,16 @@
     The API passes origin and widget_referrer as URL parameters, which YouTube
     accepts as the embedding site's identity.
 
-    The iframe title attribute is stripped and pointer events are disabled to stop
-    the webview from showing a "Bloomberg Business News Live" tooltip on screen.
+    Tooltip suppression: the IFrame API sets the iframe title to the video title,
+    and the webview shows it as a tooltip. A transparent overlay absorbs hover, and
+    a MutationObserver clears the title any time it is set.
 
     If the stream breaks:
     - Check whether Bloomberg restarted the stream and the video ID changed (VIDEO_ID below).
     - Any YouTube error code appears in red text at the bottom left of the screen.
     -->
     <div id="player"></div>
+    <div id="overlay"></div>
     <div id="status"></div>
 
     <!-- YouTube IFrame Player API loader -->
@@ -60,12 +73,16 @@
         var VIDEO_ID = "QB5BNdBFujE"; // Update if Bloomberg restarts the stream
         var player;
 
-        // Remove the iframe title attribute that the webview renders as a tooltip
-        function stripTitle() {
+        // Clear the title on an iframe and keep it cleared if anything sets it again
+        function suppressTitle(iframe) {
             try {
-                if (player && player.getIframe) {
-                    player.getIframe().removeAttribute("title");
-                }
+                iframe.setAttribute("title", "");
+                var observer = new MutationObserver(function () {
+                    if (iframe.getAttribute("title") !== "") {
+                        iframe.setAttribute("title", "");
+                    }
+                });
+                observer.observe(iframe, { attributes: true, attributeFilter: ["title"] });
             } catch (err) {
                 // Non-fatal: tooltip may show, but playback is unaffected
             }
@@ -90,14 +107,10 @@
                     },
                     events: {
                         onReady: function (e) {
-                            stripTitle();
+                            suppressTitle(e.target.getIframe());
                             // Mute and play explicitly in case autoplay params are ignored
                             e.target.mute();
                             e.target.playVideo();
-                        },
-                        onStateChange: function () {
-                            // The API may reapply the title; strip it again on any state change
-                            stripTitle();
                         },
                         onError: function (e) {
                             // Show the YouTube error code on screen for diagnosis
