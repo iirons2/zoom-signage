@@ -20,6 +20,9 @@
             width: 100%;
             height: 100%;
             border: none;
+            /* Block hover/pointer events so the webview never shows the iframe title tooltip.
+               Signage is non-interactive, so nothing is lost. */
+            pointer-events: none;
         }
         /* On-screen error readout, since there is no console on the Roommate */
         #status {
@@ -41,6 +44,9 @@
     The API passes origin and widget_referrer as URL parameters, which YouTube
     accepts as the embedding site's identity.
 
+    The iframe title attribute is stripped and pointer events are disabled to stop
+    the webview from showing a "Bloomberg Business News Live" tooltip on screen.
+
     If the stream breaks:
     - Check whether Bloomberg restarted the stream and the video ID changed (VIDEO_ID below).
     - Any YouTube error code appears in red text at the bottom left of the screen.
@@ -53,6 +59,17 @@
     <script>
         var VIDEO_ID = "QB5BNdBFujE"; // Update if Bloomberg restarts the stream
         var player;
+
+        // Remove the iframe title attribute that the webview renders as a tooltip
+        function stripTitle() {
+            try {
+                if (player && player.getIframe) {
+                    player.getIframe().removeAttribute("title");
+                }
+            } catch (err) {
+                // Non-fatal: tooltip may show, but playback is unaffected
+            }
+        }
 
         // Called automatically by the IFrame API once it has loaded
         function onYouTubeIframeAPIReady() {
@@ -73,9 +90,14 @@
                     },
                     events: {
                         onReady: function (e) {
+                            stripTitle();
                             // Mute and play explicitly in case autoplay params are ignored
                             e.target.mute();
                             e.target.playVideo();
+                        },
+                        onStateChange: function () {
+                            // The API may reapply the title; strip it again on any state change
+                            stripTitle();
                         },
                         onError: function (e) {
                             // Show the YouTube error code on screen for diagnosis
